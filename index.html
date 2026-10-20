@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pothole Reporter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --tar:#14161a;--asphalt:#1d2025;--card:#262a31;--bd:#3a3f48;
+  --paper:#f3f2ee;--mute:#9aa0a9;--sign:#ffc21a;--signink:#1a1a1a;
+  --ok:#4fd18b;--bad:#ff6b57;--bg:var(--asphalt);--fg:var(--paper);
+  --display:"Barlow Condensed","Arial Narrow",Impact,sans-serif;
+  --body:"Barlow","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:light){
+  :root{--bg:#e9e7e0;--fg:#1b1d20;--card:#fffefb;--bd:#d4d1c6;--mute:#5f656d;--ok:#12794a;--bad:#c13b28}
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.55 var(--body)}
+
+/* hero */
+.hero{background:var(--tar);color:var(--paper);padding:56px 20px 0;overflow:hidden}
+.hero-in{max-width:760px;margin:0 auto}
+.hero h1{margin:0;font:800 clamp(46px,11vw,92px)/.92 var(--display);letter-spacing:-.5px}
+.hero h1 span{color:var(--sign)}
+.hero p{margin:18px 0 36px;max-width:44ch;color:#c8ccd2;font-size:19px}
+.road{height:74px;background:#0d0e10;position:relative;margin:0 -20px;border-top:5px solid #3a3d43}
+.road::before{content:"";position:absolute;left:0;right:0;top:50%;height:6px;margin-top:-3px;
+  background:repeating-linear-gradient(90deg,var(--sign) 0 46px,transparent 46px 92px);
+  animation:drive 1.6s linear infinite}
+.road::after{content:"";position:absolute;left:50%;top:50%;width:46px;height:30px;margin:-15px 0 0 -23px;border-radius:50%;
+  background:#050506;box-shadow:inset 0 3px 6px #000,0 0 0 3px #1c1e22}
+@keyframes drive{to{background-position:-92px 0}}
+@media (prefers-reduced-motion:reduce){.road::before{animation:none}}
+
+/* steps */
+main{max-width:760px;margin:0 auto;padding:36px 16px 70px}
+.steps{list-style:none;margin:0;padding:0;position:relative}
+.steps::before{content:"";position:absolute;left:23px;top:30px;bottom:30px;width:4px;
+  background:repeating-linear-gradient(180deg,var(--sign) 0 14px,transparent 14px 28px);opacity:.7}
+.step{position:relative;padding-left:70px;margin-bottom:26px}
+.pin{position:absolute;left:0;top:0;width:50px;height:50px;border-radius:50%;background:var(--sign);color:var(--signink);
+  font:800 28px/50px var(--display);text-align:center;box-shadow:0 0 0 5px var(--bg)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:20px}
+.card h2{margin:0 0 4px;font:800 28px/1.1 var(--display)}
+.hint{margin:0 0 14px;color:var(--mute);font-size:15px}
+
+/* controls */
+label{display:block;font-size:14px;font-weight:500;color:var(--mute);margin:14px 0 5px}
+input,textarea{width:100%;padding:12px 13px;border-radius:9px;border:1.5px solid var(--bd);background:transparent;color:var(--fg);font:inherit}
+input:focus,textarea:focus{border-color:var(--sign);outline:none}
+textarea{min-height:230px;resize:vertical;line-height:1.5;font-size:15px}
+button{cursor:pointer;border:0;border-radius:10px;padding:12px 18px;font:600 16px var(--body);background:var(--sign);color:var(--signink);transition:transform .12s}
+button:hover:not(:disabled){transform:translateY(-1px)}
+button.alt{background:transparent;color:var(--fg);border:1.5px solid var(--bd)}
+button.alt:hover:not(:disabled){border-color:var(--sign)}
+button:disabled{opacity:.4;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--sign);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+
+/* drop zone */
+.drop{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;padding:34px 16px;border:2.5px dashed var(--sign);
+  border-radius:14px;background:rgba(255,194,26,.06);color:var(--fg);font:600 18px var(--body)}
+.drop.over{background:rgba(255,194,26,.18)}
+.drop svg{width:46px;height:46px;stroke:var(--sign)}
+.drop small{font:400 14px var(--body);color:var(--mute)}
+canvas{width:100%;border-radius:10px;background:#000;display:none;margin-top:14px}
+
+/* result */
+.result{display:none;align-items:center;gap:16px;margin-top:14px;padding:14px 16px;border-radius:12px;border:1.5px solid var(--bd)}
+.result b{font:800 54px/1 var(--display);min-width:56px;text-align:center}
+.result.hit{border-color:var(--sign);background:rgba(255,194,26,.1)}
+.result.hit b{color:var(--sign)}
+.result.none b{color:var(--mute)}
+.result span{font-size:16px}
+.status{margin-top:10px;font-size:15px;color:var(--mute)}
+.status.ok{color:var(--ok)}.status.bad{color:var(--bad)}
+
+/* settings */
+details{margin-bottom:26px;border:1.5px solid var(--bd);border-radius:12px;padding:12px 16px;background:var(--card)}
+summary{cursor:pointer;font-weight:600}
+.note{font-size:14px;color:var(--mute);margin:10px 0 0}
+@media (max-width:520px){.step{padding-left:60px}.pin{width:42px;height:42px;font-size:24px;line-height:42px}.steps::before{left:19px}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-in">
+    <h1>Spot a pothole.<br><span>Report it today.</span></h1>
+    <p>Photograph the road, let AI confirm the damage, and send a ready-made complaint to the authority.</p>
+  </div>
+  <div class="road" aria-hidden="true"></div>
+</header>
+
+<main>
+  <details id="cfg">
+    <summary>Detection sensitivity</summary>
+    <label for="conf">Minimum confidence (%)</label>
+    <input id="conf" type="number" min="10" max="95" value="40">
+    <p class="note">Lower it to catch more potholes. Raise it to avoid false detections.</p>
+  </details>
+
+  <ol class="steps">
+    <li class="step">
+      <div class="pin">1</div>
+      <section class="card">
+        <h2>Photograph the road</h2>
+        <p class="hint">Stand back so the whole damaged patch is in the frame.</p>
+        <input id="file" type="file" accept="image/*" capture="environment" hidden>
+        <button class="drop" id="pick" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.6"/></svg>
+          <span id="dropText">Take a photo or choose one</span>
+          <small>You can also drop an image here</small>
+        </button>
+        <canvas id="cv" aria-label="Road photo with detected potholes"></canvas>
+        <div class="result" id="result"><b id="count">0</b><span id="resText"></span></div>
+        <div class="row"><button id="detect" type="button" disabled>Detect potholes</button></div>
+        <div class="status" id="detStatus"></div>
+      </section>
+    </li>
+
+    <li class="step">
+      <div class="pin">2</div>
+      <section class="card">
+        <h2>Add the location</h2>
+        <p class="hint">Authorities need to know exactly where to send the repair crew.</p>
+        <div class="row" style="margin-top:0"><button class="alt" id="gps" type="button">Use my current location</button></div>
+        <label for="addr">Street or landmark</label>
+        <input id="addr" placeholder="e.g. Opposite the bus stop on Station Road">
+        <div class="status" id="gpsStatus"></div>
+      </section>
+    </li>
+
+    <li class="step">
+      <div class="pin">3</div>
+      <section class="card">
+        <h2>Send your complaint</h2>
+        <p class="hint">Check the text, then send it. Your photo is attached automatically.</p>
+        <label for="to">Authority email</label>
+        <input id="to" type="email" placeholder="Municipal corporation or road department">
+        <label for="name">Your name</label>
+        <input id="name" autocomplete="name">
+        <label for="rep">Your email (you get a copy, and replies come to you)</label>
+        <input id="rep" type="email" autocomplete="email">
+        <label for="body">Complaint text</label>
+        <textarea id="body"></textarea>
+        <div class="row">
+          <button class="alt" id="save" type="button">Download photo</button>
+          <button id="mail" type="button">Send complaint</button>
+          <button class="alt" id="copy" type="button">Copy text</button>
+        </div>
+        <div class="status" id="sendStatus"></div>
+      </section>
+    </li>
+  </ol>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const cv=$("cv"),ctx=cv.getContext("2d");
+let img=false,found=null,coords=null;
+
+function store(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function load(k){try{return localStorage.getItem(k)||""}catch(e){return ""}}
+$("conf").value=load("pc")||40;$("to").value=load("pt");$("name").value=load("pn");$("rep").value=load("pr");
+$("conf").addEventListener("change",()=>store("pc",$("conf").value));
+$("rep").addEventListener("change",()=>store("pr",$("rep").value));
+$("to").addEventListener("change",()=>store("pt",$("to").value));
+$("name").addEventListener("change",()=>store("pn",$("name").value));
+
+function setStatus(id,t,c){const el=$(id);el.textContent=t;el.className="status "+(c||"")}
+
+$("pick").onclick=()=>$("file").click();
+$("file").onchange=e=>e.target.files[0]&&loadFile(e.target.files[0]);
+const dz=$("pick");
+["dragover","dragenter"].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add("over")}));
+["dragleave","drop"].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove("over")}));
+dz.addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(f&&f.type.startsWith("image/"))loadFile(f)});
+
+function loadFile(f){
+  const im=new Image();
+  im.onload=()=>{
+    const s=Math.min(1,1280/Math.max(im.width,im.height));
+    cv.width=Math.round(im.width*s);cv.height=Math.round(im.height*s);
+    ctx.drawImage(im,0,0,cv.width,cv.height);
+    cv.style.display="block";img=true;found=null;
+    $("result").style.display="none";
+    $("dropText").textContent="Change photo";
+    $("detect").disabled=false;
+    setStatus("detStatus","Photo ready. Select Detect potholes.");
+    buildText();
+  };
+  im.onerror=()=>setStatus("detStatus","This photo could not be opened. Use a JPG or PNG image. iPhone HEIC photos only open in Safari.","bad");
+  im.src=URL.createObjectURL(f);
+}
+
+function showResult(n){
+  const r=$("result");r.style.display="flex";
+  r.className="result "+(n?"hit":"none");
+  $("count").textContent=n;
+  $("resText").textContent=n?(n>1?"potholes found in this photo":"pothole found in this photo"):"potholes found. Try a closer photo or lower the confidence.";
+}
+
+$("detect").onclick=async()=>{
+  const min=(+$("conf").value||40)/100;
+  $("detect").disabled=true;setStatus("detStatus","Analysing photo…");
+  try{
+    const clean=document.createElement("canvas");clean.width=cv.width;clean.height=cv.height;
+    clean.getContext("2d").drawImage(cv,0,0);
+    const blob=await new Promise(r=>clean.toBlob(r,"image/jpeg",.85));
+    const fd=new FormData();fd.append("image",blob,"road.jpg");fd.append("confidence",Math.round(min*100));fd.append("width",cv.width);fd.append("height",cv.height);
+    const r=await fetch("/api/detect",{method:"POST",body:fd});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||"Detection failed.");
+    const preds=(d.predictions||[]).filter(p=>p.confidence>=min);
+    ctx.drawImage(clean,0,0);
+    ctx.lineWidth=Math.max(3,cv.width/230);ctx.strokeStyle="#ffc21a";ctx.fillStyle="#ffc21a";
+    ctx.font=`bold ${Math.max(15,cv.width/40)}px sans-serif`;
+    preds.forEach(p=>{
+      const x=p.x-p.width/2,y=p.y-p.height/2;
+      ctx.strokeRect(x,y,p.width,p.height);
+      const t=Math.round(p.confidence*100)+"%",w=ctx.measureText(t).width+10,h=Math.max(22,cv.width/32);
+      ctx.fillRect(x,Math.max(0,y-h),w,h);
+      ctx.fillStyle="#1a1a1a";ctx.fillText(t,x+5,Math.max(h-6,y-6));ctx.fillStyle="#ffc21a";
+    });
+    found=preds;showResult(preds.length);setStatus("detStatus","");buildText();
+  }catch(e){setStatus("detStatus",e.message||"Detection failed.","bad");}
+  $("detect").disabled=false;
+};
+
+$("gps").onclick=()=>{
+  if(!window.isSecureContext){setStatus("gpsStatus","Open the site at http://localhost:8000 for location to work.","bad");return;}
+  if(!navigator.geolocation){setStatus("gpsStatus","This browser cannot share location. Type the address instead.","bad");return;}
+  setStatus("gpsStatus","Finding location…");
+  navigator.geolocation.getCurrentPosition(p=>{
+    coords={lat:p.coords.latitude.toFixed(6),lng:p.coords.longitude.toFixed(6)};
+    setStatus("gpsStatus",`Location added: ${coords.lat}, ${coords.lng}`,"ok");buildText();
+  },err=>{
+    const why={1:"Location is blocked. Allow it for this site in your browser and in Mac Privacy settings.",
+      2:"Your Mac could not work out its position. Check Wi-Fi is on, or type the address instead.",
+      3:"Finding the location took too long. Try again, or type the address instead."};
+    setStatus("gpsStatus",why[err.code]||"Location failed. Type the address instead.","bad");
+  },{enableHighAccuracy:false,timeout:20000,maximumAge:60000});
+};
+["addr","name"].forEach(i=>$(i).addEventListener("input",buildText));
+
+function buildText(){
+  const n=found?found.length:null;
+  const date=new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+  const loc=[$("addr").value.trim(),coords?`GPS: ${coords.lat}, ${coords.lng}\nMap: https://www.google.com/maps?q=${coords.lat},${coords.lng}`:""].filter(Boolean).join("\n")||"[Add street or landmark]";
+  $("body").value=
+`Subject: Complaint about potholes on road – immediate repair requested
+
+Respected Sir/Madam,
+
+I am writing to report ${n?`${n} pothole${n>1?"s":""}`:"a pothole"} that I found on a public road on ${date}. The damage is a risk to two-wheelers, cars and pedestrians, and it gets worse during rain.
+
+Location:
+${loc}
+
+The photo attached to this email shows the damaged road surface${n?", marked by an AI pothole detection tool":""}.
+
+Please inspect the road and arrange repairs soon. I would also appreciate a reply with a complaint reference number.
+
+Thank you,
+${$("name").value.trim()||"[Your name]"}`;
+}
+
+$("mail").onclick=async()=>{
+  if(!img){setStatus("sendStatus","Add a photo first.","bad");$("pick").scrollIntoView({behavior:"smooth"});return;}
+  const t=$("body").value,m=t.match(/^Subject: (.*)\n\n([\s\S]*)$/);
+  const fd=new FormData();
+  fd.append("to",$("to").value.trim());fd.append("reporter",$("rep").value.trim());
+  fd.append("subject",m?m[1]:"Pothole complaint");fd.append("body",m?m[2]:t);
+  const btn=$("mail");btn.disabled=true;setStatus("sendStatus","Sending…");
+  try{
+    const blob=await new Promise(r=>cv.toBlob(r,"image/jpeg",.9));
+    fd.append("image",blob,"pothole-report.jpg");
+    const r=await fetch("/api/report",{method:"POST",body:fd});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||"Sending failed.");
+    setStatus("sendStatus","Complaint sent to "+d.sent_to+(fd.get("reporter")?". A copy is in your inbox.":"."),"ok");
+  }catch(e){setStatus("sendStatus",e.message||"Sending failed.","bad");}
+  btn.disabled=false;
+};
+$("save").onclick=()=>{
+  if(!img){$("pick").scrollIntoView({behavior:"smooth"});return;}
+  const a=document.createElement("a");a.download="pothole-report.jpg";a.href=cv.toDataURL("image/jpeg",.9);a.click();
+};
+$("copy").onclick=async()=>{
+  try{await navigator.clipboard.writeText($("body").value);}catch(e){$("body").select();}
+};
+buildText();
+if(location.protocol==="file:")setStatus("detStatus","Open this page at http://localhost:8000 while the app is running. Opening the file directly will not work.","bad");
+</script>
+</body>
+</html>
